@@ -1,6 +1,7 @@
 package com.example.agecalculator
 
 import android.os.Build
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -51,10 +52,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.clickable
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -63,7 +68,7 @@ import java.util.Locale
 @RequiresApi(Build.VERSION_CODES.S)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AgeCalculatorApp(){
+fun AgeCalculatorApp() {
 
     val gradientBrush = Brush.linearGradient(
         colors = listOf(
@@ -85,9 +90,7 @@ fun AgeCalculatorApp(){
         end = Offset(1000f, 500f)
     )
 
-    // 🌈 Life Tracker – Unified Gradient Theme for ColourfulCards
 
-// 1️⃣ Total Days Lived → Dawn Horizon (hopeful, bright start)
     val daysLivedGradient = Brush.linearGradient(
         colors = listOf(
             Color(0xFF3A0CA3), // Deep Indigo
@@ -98,7 +101,6 @@ fun AgeCalculatorApp(){
         end = Offset(1000f, 400f)
     )
 
-// 2️⃣ Total Hours Lived → Solar Energy (power, productivity)
     val hoursLivedGradient = Brush.linearGradient(
         colors = listOf(
             Color(0xFFFF8500), // Orange
@@ -109,7 +111,6 @@ fun AgeCalculatorApp(){
         end = Offset(800f, 600f)
     )
 
-// 3️⃣ Total Minutes Lived → Aqua Pulse (flow of moments)
     val minutesLivedGradient = Brush.linearGradient(
         colors = listOf(
             Color(0xFF00B4D8), // Aqua Blue
@@ -120,7 +121,6 @@ fun AgeCalculatorApp(){
         end = Offset(900f, 300f)
     )
 
-// 4️⃣ Total Heartbeat → Crimson Pulse (life & vitality)
     val heartbeatGradient = Brush.linearGradient(
         colors = listOf(
             Color(0xFFD00000), // Strong Red
@@ -131,7 +131,6 @@ fun AgeCalculatorApp(){
         end = Offset(800f, 800f)
     )
 
-// 5️⃣ Next Birthdate → Celebration Glow (festive, happy)
     val nextBirthdateGradient = Brush.linearGradient(
         colors = listOf(
             Color(0xFFFFC300), // Bright Yellow
@@ -142,7 +141,6 @@ fun AgeCalculatorApp(){
         end = Offset(900f, 600f)
     )
 
-// 6️⃣ Total Seconds Lived → Cosmic Energy (limitless time)
     val secondsLivedGradient = Brush.linearGradient(
         colors = listOf(
             Color(0xFF4361EE), // Bright Indigo
@@ -153,79 +151,94 @@ fun AgeCalculatorApp(){
         end = Offset(1000f, 500f)
     )
 
+    val helperFunction = HelperFunctions()
 
 
     var birthDateInput by remember { mutableStateOf("") }
     var currentDate by remember { mutableStateOf("") }
-    var personAge by remember { mutableStateOf(0) }
-    var personMonths by remember { mutableStateOf("8") }
-    var personDays by remember { mutableStateOf("29") }
-    var personHours by remember { mutableStateOf("9") }
-    
-    var totalYearsLived by remember { mutableIntStateOf(8) }
-    var totalDaysLived by remember { mutableStateOf("") }
-    var totalHoursLived by remember { mutableStateOf("") }
-    var totalMinutesLived by remember { mutableStateOf("") }
-    var totalSecondsLived by remember { mutableStateOf("") }
-    var totalHeartBeats by remember { mutableStateOf("") }
-    var nextBirthdayIn by remember { mutableStateOf("") }
+    var personAge by remember { mutableIntStateOf(0) }
+    var personMonths by remember { mutableStateOf(0) }
+    var personDays by remember { mutableStateOf(0) }
+    var personHours by remember { mutableStateOf(0) }
+
+    var totalYearsLived: Long by remember { mutableStateOf(8) }
+    var totalDaysLived: Long by remember { mutableStateOf(0) }
+    var totalHoursLived: Long by remember { mutableStateOf(0) }
+    var totalMinutesLived: Long by remember { mutableStateOf(0) }
+    var totalSecondsLived: Long by remember { mutableStateOf(0) }
+    var totalHeartBeats: Long by remember { mutableStateOf(0) }
+    var nextBirthdayIn: Long by remember { mutableStateOf(0) }
 
     var showDOBPickerDialog by remember { mutableStateOf(false) }
     var showCurrentDatePickerDialog by remember { mutableStateOf(false) }
 
     var dOBInMillis by remember { mutableLongStateOf(0) }
-    var choosenDateInMillis by remember { mutableLongStateOf(0) }
+    var chosenDateInMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    val context = LocalContext.current
 
-    if (showDOBPickerDialog){
+
+    if (showDOBPickerDialog) {
         SelectDate(
             onDismiss = { showDOBPickerDialog = false },
-            onConfirm = { selectedDate ->
-                birthDateInput = selectedDate
-                showDOBPickerDialog = false
-            },
-            selectedDateMillis = { millis ->
-                dOBInMillis = millis
+            onDateSelected = { millis, selectedDate ->
+                if (helperFunction.isValidDate(millis, chosenDateInMillis)){
+                    dOBInMillis = millis
+                    birthDateInput = selectedDate
+                    showDOBPickerDialog =false
+                }else{
+                    Toast.makeText(context,"Birth date cannot be in the future. Please select a past date.", Toast.LENGTH_LONG).show()
+                }
+
             }
         )
     }
 
-    if (showCurrentDatePickerDialog){
+    if (showCurrentDatePickerDialog) {
         SelectDate(
             onDismiss = { showCurrentDatePickerDialog = false },
-            onConfirm = { selectedDate ->
-                currentDate = selectedDate
-                showCurrentDatePickerDialog = false
-            },
-            selectedDateMillis = { millis ->
-                choosenDateInMillis = millis
+            onDateSelected = { millis, selectedDate ->
+                if (helperFunction.isValidDate(dOBInMillis, millis)){
+                    chosenDateInMillis = millis
+                    currentDate = selectedDate
+                    showCurrentDatePickerDialog =false
+                }else{
+                    Toast.makeText(context,"Current date must be after the birth date.", Toast.LENGTH_LONG).show()
+                }
             }
         )
     }
 
 
 
-    fun isValidDate(): Boolean{
-        if (dOBInMillis < choosenDateInMillis ) {
-            return true
-        } else {
-            return false
-        }
+    if (dOBInMillis > 0L) {
+        val (years, months, days) = helperFunction.computeAgeParts(dOBInMillis, chosenDateInMillis)
+        personAge = years
+        personMonths = months
+        personDays = days
 
+        val totals = helperFunction.computeTotalsSince(dOBInMillis, chosenDateInMillis)
+        totalHeartBeats = totals.days * 75 * 60 * 24
+        totalDaysLived = totals.days
+        totalHoursLived = totals.hours
+        totalMinutesLived = totals.minutes
+        totalSecondsLived = totals.seconds
+
+//        nextBirthdayIn = daysUntilNextBirthday(dOBInMillis).toString()
     }
 
-    fun millisToLocalDate(millis: Long): java.time.LocalDate{
-        return java.time.Instant.ofEpochMilli(millis)
-            .atZone(java.time.ZoneId.systemDefault())
-            .toLocalDate()
-    }
+
+
+
 
     fun CalculateAge() {
         if (birthDateInput.isNotEmpty() && currentDate.isNotEmpty()) {
-            if (isValidDate()) {
-                personAge = (currentDate.split("/")[2].toInt()) - (birthDateInput.split("/")[2].toInt())
+            if (helperFunction.isValidDate(dOBInMillis, chosenDateInMillis)) {
+                personAge =
+                    (currentDate.split("/")[2].toInt()) - (birthDateInput.split("/")[2].toInt())
 
-
-
+            }
+            else{
+                Toast.makeText(context,"Invalid Date", Toast.LENGTH_SHORT).show()
             }
 
         }
@@ -233,178 +246,238 @@ fun AgeCalculatorApp(){
 
 
     LaunchedEffect(Unit) {
-        val todayDate  = System.currentTimeMillis()
-        currentDate = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(todayDate)
+        val todayDate = System.currentTimeMillis()
+        currentDate = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
+            .format(java.time.LocalDate.now()).toString()
+
+
     }
 
     LaunchedEffect(currentDate, birthDateInput) {
         CalculateAge()
     }
 
-
-    Scaffold(modifier = Modifier.fillMaxSize(),
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
                 title = {
-                    Text(text = "Age Calculator")
-                }
-            )
-        }) { paddingValues ->
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
 
-        Box(Modifier
-            .fillMaxSize()
-            .padding(paddingValues)
-            .background(brush = gradientBrush)){
-            LazyColumn (modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 8.dp)){
-                item(){
-                    Column(Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally,) {
-                        Text("✨ Time Traveler ✨",
-                            fontSize = 30.sp,
-                            fontWeight = FontWeight.W700,
-                            fontFamily = FontFamily.Monospace
-                            )
-                        Spacer(Modifier.height(4.dp))
-                        Text("Discover your Journey through time \uD83E\uDD29")
-                        Spacer(Modifier.height(16.dp))
-                        Card(
-                            Modifier
-                                .fillMaxSize(),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color.Transparent.copy(alpha = 0.3f)
-                            )
                         ) {
-                                Column(Modifier.padding(16.dp)) {
-                                    Text("🗓️ Enter Your Birth Date")
-                                    Spacer(Modifier.height(4.dp))
-
-                                    Box {
-                                        OutlinedTextField(
-                                            value = birthDateInput,
-                                            onValueChange = { },
-                                            placeholder = { Text("dd/mm/yyyy") },
-                                            modifier = Modifier.fillMaxWidth(),
-                                            readOnly = true,
-                                            trailingIcon = {
-                                                Icon(Icons.Default.DateRange, contentDescription = "bDate")
-                                            },
-                                            shape = RoundedCornerShape(16.dp)
-                                        )
-                                        Box(
-                                            modifier = Modifier
-                                                .matchParentSize()
-                                                .clickable { showDOBPickerDialog = true }
-                                        )
-                                    }
-                                    Spacer(Modifier.height(8.dp))
-
-                                    Text("🗓️ Current Date")
-
-                                    Box(){
-                                        OutlinedTextField(
-                                            value = currentDate,
-                                            onValueChange = { },
-                                            placeholder = { Text("dd/mm/yyyy") },
-                                            modifier = Modifier.fillMaxWidth(),
-                                            trailingIcon = {
-                                                Icon(Icons.Default.DateRange, contentDescription = "cDate")
-                                            },
-                                            shape = RoundedCornerShape(16.dp)
-                                        )
-                                        Box(
-                                            modifier = Modifier
-                                                .matchParentSize()
-                                                .clickable(onClick = {
-                                                    showCurrentDatePickerDialog = true
-                                                })
-                                        )
-                                    }
-                                }
+                            Text(
+                                "Age Matrix",
+                                style = MaterialTheme.typography.titleLarge,
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text("Measure your life in moments",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.W700,
+                                fontFamily = FontFamily.Monospace)
                         }
+                },
+                scrollBehavior = scrollBehavior)
+        }) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .background(brush = gradientBrush)
+        ){
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
+                .padding(top = 8.dp)
+                .nestedScroll(scrollBehavior.nestedScrollConnection)
+        ) {
+            item() {
+                Column(
+                    Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Card(
+                        Modifier
+                            .fillMaxSize(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.Transparent.copy(alpha = 0.3f)
+                        )
+                    ) {
+                        Column(Modifier.padding(16.dp)) {
+                            Text("🗓️ Enter Your Birth Date")
+                            Spacer(Modifier.height(4.dp))
 
-                        Spacer(Modifier.height(16.dp))
+                            Box {
+                                OutlinedTextField(
+                                    value = birthDateInput,
+                                    onValueChange = { },
+                                    placeholder = { Text("dd/mm/yyyy") },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    readOnly = true,
+                                    trailingIcon = {
+                                        Icon(Icons.Default.DateRange, contentDescription = "bDate")
+                                    },
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .matchParentSize()
+                                        .clickable { showDOBPickerDialog = true }
+                                )
+                            }
+                            Spacer(Modifier.height(8.dp))
 
-                        Box(Modifier
+                            Text("🗓️ Current Date")
+
+                            Box() {
+                                OutlinedTextField(
+                                    value = currentDate,
+                                    onValueChange = { },
+                                    placeholder = { Text("dd/mm/yyyy") },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    trailingIcon = {
+                                        Icon(Icons.Default.DateRange, contentDescription = "cDate")
+                                    },
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .matchParentSize()
+                                        .clickable(onClick = {
+                                            showCurrentDatePickerDialog = true
+                                        })
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Box(
+                        Modifier
                             .fillMaxSize()
                             .background(
                                 brush = birthdayCardBrush,
                                 shape = RoundedCornerShape(16.dp),
                                 alpha = .7f
                             )
+                    ) {
+                        Column(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            Column(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 16.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
 
-                                Text("$personAge", fontSize = 70.sp, fontWeight = FontWeight.W700)
-                                Text("years old",
-                                    fontSize = 22.sp)
-                                Spacer(Modifier.height(8.dp))
-                                Text("$personMonths months, $personDays days, $personHours hours",
-                                    fontSize = 18.sp)
-
-                            }
-
+                            Text("$personAge", fontSize = 70.sp, fontWeight = FontWeight.W700)
+                            Text(
+                                "years old",
+                                fontSize = 22.sp
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "$personMonths months, $personDays days, $personHours hours",
+                                fontSize = 18.sp
+                            )
 
                         }
 
-                    }
-                }
 
-                item {
-                    ColourfulCards(icon = Icons.Default.CalendarToday, brush = daysLivedGradient, title = "Total Days Lived", count = totalYearsLived)
-                    ColourfulCards(icon = Icons.Default.AccessTime, brush = hoursLivedGradient, title = "Total Hours Lived", count = totalYearsLived)
-                    ColourfulCards(icon = Icons.Default.AutoAwesome, brush = minutesLivedGradient, title = "Total Minutes Lived", count = totalYearsLived)
-                    ColourfulCards(icon = Icons.Default.FavoriteBorder, brush = heartbeatGradient, title = "Total Heartbeat", count = totalYearsLived)
-                    ColourfulCards(icon = Icons.Default.Cake, brush = nextBirthdateGradient, title = "Next Birthdate", count = totalYearsLived, description = "days to celebrate!")
-                    ColourfulCards(icon = Icons.Default.Timeline, brush = secondsLivedGradient, title = "You've been alive for", count = totalYearsLived, description = "and counting...")
+                    }
 
                 }
             }
+
+            item {
+                ColourfulCards(
+                    icon = Icons.Default.CalendarToday,
+                    brush = daysLivedGradient,
+                    title = "Total Days Lived",
+                    count = totalDaysLived
+                )
+                ColourfulCards(
+                    icon = Icons.Default.AccessTime,
+                    brush = hoursLivedGradient,
+                    title = "Total Hours Lived",
+                    count = totalHoursLived
+                )
+                ColourfulCards(
+                    icon = Icons.Default.AutoAwesome,
+                    brush = minutesLivedGradient,
+                    title = "Total Minutes Lived",
+                    count = totalMinutesLived
+                )
+                ColourfulCards(
+                    icon = Icons.Default.FavoriteBorder,
+                    brush = heartbeatGradient,
+                    title = "Total Heartbeat",
+                    count = totalHeartBeats
+                )
+                ColourfulCards(
+                    icon = Icons.Default.Cake,
+                    brush = nextBirthdateGradient,
+                    title = "Next Birthdate",
+                    count = nextBirthdayIn,
+                    description = "days to celebrate!"
+                )
+                ColourfulCards(
+                    icon = Icons.Default.Timeline,
+                    brush = secondsLivedGradient,
+                    title = "You've been alive for",
+                    count = totalSecondsLived,
+                    description = "seconds and counting..."
+                )
+
+            }
         }
+//        box
+    }
 
     }
 }
 
 
-
 @Composable
 fun ColourfulCards(
     icon: ImageVector,
-    brush: Brush ,
+    brush: Brush,
     title: String,
-    count: Int,
+    count: Long,
     description: String? = null
 
-){
-    Box(Modifier
-        .padding(top = 12.dp)
-        .background(brush, shape = RoundedCornerShape(16.dp), alpha = .7f)){
+) {
+    Box(
+        Modifier
+            .padding(top = 12.dp)
+            .background(brush, shape = RoundedCornerShape(16.dp), alpha = .7f)
+    ) {
         Column(
             Modifier
                 .fillMaxWidth()
                 .padding(start = 24.dp, top = 16.dp, bottom = 16.dp),
             horizontalAlignment = Alignment.Start
         ) {
-            Row(Modifier.fillMaxHeight(),
+            Row(
+                Modifier.fillMaxHeight(),
                 horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
+            ) {
                 Icon(icon, contentDescription = "icon")
                 Spacer(Modifier.width(8.dp))
-                Text(title,
-                    )
+                Text(
+                    title,
+                )
             }
             Spacer(Modifier.height(8.dp))
-            Text("$count",
+            Text(
+                "$count",
                 fontSize = 30.sp,
-                fontWeight = FontWeight.W700)
+                fontWeight = FontWeight.W700
+            )
             if (description != null) {
                 Text(description)
             }
@@ -416,8 +489,7 @@ fun ColourfulCards(
 @Composable
 fun SelectDate(
     onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit,
-    selectedDateMillis: (Long) -> Unit
+    onDateSelected: (Long, String) -> Unit
 ) {
     val datePickerState = rememberDatePickerState()
     DatePickerDialog(
@@ -427,10 +499,9 @@ fun SelectDate(
         confirmButton = {
             TextButton({
                 datePickerState.selectedDateMillis?.let { millis ->
-                    selectedDateMillis(millis)
                     val formatted =
                         SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(millis))
-                    onConfirm(formatted)
+                    onDateSelected(millis,formatted)
 
                 }
             }) {
@@ -442,8 +513,10 @@ fun SelectDate(
             TextButton({ onDismiss() }) {
                 Text("Cancel")
             }
-        }) {
-        DatePicker(datePickerState)
-
+        },
+    ) {
+        DatePicker(
+            state = datePickerState,
+        )
     }
 }

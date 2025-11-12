@@ -60,6 +60,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.i18n.DateTimeFormatter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -209,53 +210,30 @@ fun AgeCalculatorApp() {
     }
 
 
-
-    if (dOBInMillis > 0L) {
-        val (years, months, days) = helperFunction.computeAgeParts(dOBInMillis, chosenDateInMillis)
-        personAge = years
-        personMonths = months
-        personDays = days
-
-        val totals = helperFunction.computeTotalsSince(dOBInMillis, chosenDateInMillis)
-        totalHeartBeats = totals.days * 75 * 60 * 24
-        totalDaysLived = totals.days
-        totalHoursLived = totals.hours
-        totalMinutesLived = totals.minutes
-        totalSecondsLived = totals.seconds
-
-//        nextBirthdayIn = daysUntilNextBirthday(dOBInMillis).toString()
-    }
-
-
-
-
-
-    fun CalculateAge() {
-        if (birthDateInput.isNotEmpty() && currentDate.isNotEmpty()) {
-            if (helperFunction.isValidDate(dOBInMillis, chosenDateInMillis)) {
-                personAge =
-                    (currentDate.split("/")[2].toInt()) - (birthDateInput.split("/")[2].toInt())
-
-            }
-            else{
-                Toast.makeText(context,"Invalid Date", Toast.LENGTH_SHORT).show()
-            }
-
-        }
-    }
-
-
     LaunchedEffect(Unit) {
-        val todayDate = System.currentTimeMillis()
-        currentDate = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
-            .format(java.time.LocalDate.now()).toString()
-
+        val formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
+        currentDate = java.time.LocalDate.now().format(formatter).toString()
 
     }
 
     LaunchedEffect(currentDate, birthDateInput) {
-        CalculateAge()
-    }
+        if (dOBInMillis > 0L) {
+            val (years, months, days) = helperFunction.computeAgeParts(dOBInMillis, chosenDateInMillis)
+            personAge = years
+            personMonths = months
+            personDays = days
+            personHours = java.time.LocalTime.now().hour
+
+
+            val totals = helperFunction.computeTotalsSince(dOBInMillis, chosenDateInMillis)
+            totalHeartBeats = totals.days * 75 * 60 * 24
+            totalDaysLived = totals.days
+            totalHoursLived = totals.hours
+            totalMinutesLived = totals.minutes
+            totalSecondsLived = totals.seconds
+
+        nextBirthdayIn = helperFunction.daysUntilNextBirthday(dOBInMillis, chosenDateInMillis)
+        }    }
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
@@ -332,6 +310,7 @@ fun AgeCalculatorApp() {
                             Spacer(Modifier.height(8.dp))
 
                             Text("🗓️ Current Date")
+                            Spacer(Modifier.height(4.dp))
 
                             Box() {
                                 OutlinedTextField(
@@ -357,89 +336,113 @@ fun AgeCalculatorApp() {
 
                     Spacer(Modifier.height(16.dp))
 
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .background(
-                                brush = birthdayCardBrush,
-                                shape = RoundedCornerShape(16.dp),
-                                alpha = .7f
-                            )
-                    ) {
-                        Column(
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-
-                            Text("$personAge", fontSize = 70.sp, fontWeight = FontWeight.W700)
-                            Text(
-                                "years old",
-                                fontSize = 22.sp
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                "$personMonths months, $personDays days, $personHours hours",
-                                fontSize = 18.sp
-                            )
-
-                        }
-
-
-                    }
-
                 }
             }
 
             item {
-                ColourfulCards(
-                    icon = Icons.Default.CalendarToday,
-                    brush = daysLivedGradient,
-                    title = "Total Days Lived",
-                    count = totalDaysLived
-                )
-                ColourfulCards(
-                    icon = Icons.Default.AccessTime,
-                    brush = hoursLivedGradient,
-                    title = "Total Hours Lived",
-                    count = totalHoursLived
-                )
-                ColourfulCards(
-                    icon = Icons.Default.AutoAwesome,
-                    brush = minutesLivedGradient,
-                    title = "Total Minutes Lived",
-                    count = totalMinutesLived
-                )
-                ColourfulCards(
-                    icon = Icons.Default.FavoriteBorder,
-                    brush = heartbeatGradient,
-                    title = "Total Heartbeat",
-                    count = totalHeartBeats
-                )
-                ColourfulCards(
-                    icon = Icons.Default.Cake,
-                    brush = nextBirthdateGradient,
-                    title = "Next Birthdate",
-                    count = nextBirthdayIn,
-                    description = "days to celebrate!"
-                )
-                ColourfulCards(
-                    icon = Icons.Default.Timeline,
-                    brush = secondsLivedGradient,
-                    title = "You've been alive for",
-                    count = totalSecondsLived,
-                    description = "seconds and counting..."
-                )
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(
+                            brush = birthdayCardBrush,
+                            shape = RoundedCornerShape(16.dp),
+                            alpha = .7f
+                        )
+                ) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        if (birthDateInput.isNotBlank()) {
+                            Text(
+                                text = "$personAge",
+                                style = MaterialTheme.typography.displayLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "years old",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            Text(
+                                text = "$personMonths months • $personDays days • $personHours hours",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
 
+                        } else {
+                            Text(
+                                "--",
+                                fontSize = 70.sp,
+                                fontWeight = FontWeight.W700,
+                                color = Color.White.copy(alpha = 0.3f)
+                            )
+                            Text(
+                                "Awaiting birth date",
+                                fontSize = 18.sp,
+                                color = Color.White.copy(alpha = 0.6f)
+                            )
+                        }
+                    }
+
+
+
+                }
+            }
+
+            if (birthDateInput.isNotBlank()){
+                item {
+                    ColourfulCards(
+                        icon = Icons.Default.CalendarToday,
+                        brush = daysLivedGradient,
+                        title = "Total Days Lived",
+                        count = totalDaysLived
+                    )
+                    ColourfulCards(
+                        icon = Icons.Default.AccessTime,
+                        brush = hoursLivedGradient,
+                        title = "Total Hours Lived",
+                        count = totalHoursLived
+                    )
+                    ColourfulCards(
+                        icon = Icons.Default.AutoAwesome,
+                        brush = minutesLivedGradient,
+                        title = "Total Minutes Lived",
+                        count = totalMinutesLived
+                    )
+                    ColourfulCards(
+                        icon = Icons.Default.FavoriteBorder,
+                        brush = heartbeatGradient,
+                        title = "Total Heartbeat",
+                        count = totalHeartBeats
+                    )
+                    ColourfulCards(
+                        icon = Icons.Default.Cake,
+                        brush = nextBirthdateGradient,
+                        title = "Next Birthdate",
+                        count = nextBirthdayIn,
+                        description = "days to celebrate!"
+                    )
+                    ColourfulCards(
+                        icon = Icons.Default.Timeline,
+                        brush = secondsLivedGradient,
+                        title = "You've been alive for",
+                        count = totalSecondsLived,
+                        description = "seconds and counting..."
+                    )
+
+                }
             }
         }
-//        box
     }
 
     }
 }
+
 
 
 @Composable
